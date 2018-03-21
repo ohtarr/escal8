@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateEscalationsTable extends Migration
+class AddGroupNameToGroupsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,10 @@ class CreateEscalationsTable extends Migration
      */
     public function up()
     {
-        Schema::create('escalations', function (Blueprint $table) {
-            $table->increments('id');
-			$table->bigInteger('group_id');
-			$table->string('incident_id');
-            $table->timestamps();
-        });
+		Schema::table('groups', function (Blueprint $table) {
+			$table->string('name');
+		});
+        //
     }
 
     /**
@@ -28,6 +26,6 @@ class CreateEscalationsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('escalations');
+        //
     }
 }
