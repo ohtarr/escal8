@@ -19,6 +19,7 @@ class Escalation extends Model
 	public function __construct(Group $group, ServiceNowIncident $incident)
 	{
 		$this->group = $group;
+		$this->group->getServiceNowGroup();
 		$this->incident = $incident;
 	}
 
@@ -73,7 +74,7 @@ class Escalation extends Model
 		        $status = Tropo::callvoice($this->getCurrentPhoneNumber(),$this->incident->generateVoiceMessage(), $this->group->tropo_key, $this->group->caller_id);
 				if($status == 1)
 				{
-					$this->incident->addComment("Called " .$this->group->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
+					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
 					$this->createCallLog(1);
 					return true;
 				}
