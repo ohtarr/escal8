@@ -9,6 +9,7 @@ use App\CallLog;
 use Carbon\Carbon;
 use App\Tropo;
 use App\Schedule;
+use Illuminate\Support\Facades\Log;
 
 class Escalation extends Model
 {
@@ -103,13 +104,35 @@ class Escalation extends Model
 		}
 		return false;
 	}
-
+/*
 	public function process()
 	{
-		if($this->isCallDelayExpired() && $this->isCallTime())
+		if($this->getCurrentPhoneNumber())
 		{
-			$this->callGroup();
+			if($this->isCallTime())
+			{
+				if($this->isCallDelayExpired())
+				{
+					$message = "Calling " . $this->getCurrentPhoneNumber() . " for group " . $this->group->getServiceNowGroup()->name . ".\n" ;
+	        	                Log::info($message);
+                		        print $message;
+					$this->callGroup();
+				} else {
+					$message = "escalation_delay is NOT expired.  Aborting Escalation.\n";
+					Log::info($message);
+                                	print $message;
+				}
+			} else {
+				$message = "It is currently outside of the escalation schedule.  Aborting Escalation.\n";
+        	                Log::info($message);
+                	        print $message;
+			}
+		} else {
+			$message = "All escalation phone numbers have been exhausted.  Aborting Escalation.\n";
+                        Log::info($message);
+                        print $message;
 		}
 	}
+/**/
 }
 

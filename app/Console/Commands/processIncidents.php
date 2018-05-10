@@ -7,6 +7,7 @@ use App\Group;
 use App\CallLog;
 use App\Tropo;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class processIncidents extends Command
 {
@@ -44,41 +45,60 @@ class processIncidents extends Command
 		$this->processEscalations();
 	}
 
-/*
-	public function createEscalations()
+	public function processEscalations()
 	{
 		$groups = Group::all();
 		foreach($groups as $group)
-		{
+        	{
+			$message = "Processing group " . $group->getServiceNowGroup()->name . " : \n" ;
+			Log::info($message);
+			print $message;
 			$incidents = $group->getOpenUnassignedPriorityIncidents();
+			$message = "Found " . $incidents->count() . " incidents that require escalation.\n" ;
+                        Log::info($message);
+                        print $message;
 			foreach($incidents as $incident)
 			{
-				$this->createEscalation($group, $incident);
+				$message = "Creating an escalation for " . $incident->number . ".\n" ;
+	                        Log::info($message);
+        	                print $message;
+				$escalation = $incident->createEscalation();
+				if($escalation->getCurrentPhoneNumber())
+		                {
+                		        if($escalation->isCallTime())
+		                        {
+		                                if($escalation->isCallDelayExpired())
+		                                {
+		                                        $message = "Calling " . $escalation->getCurrentPhoneNumber() . " for group " . $escalation->group->getServiceNowGroup()->name . ".\n" ;
+		                                        Log::info($message);
+		                                        print $message;
+		                                        $callstatus = $escalation->callGroup();
+							if($callstatus)
+							{
+								$message = "Call to group " . $escalation->group->getServiceNowGroup()->name . " was SUCCESSFUL!\n";
+	                                                        Log::info($message);
+	                                                        print $message;
+							} else {
+								$message = "Call to group " . $escalation->group->getServiceNowGroup()->name . " FAILED!\n";
+                                                                Log::info($message);
+                                                                print $message;
+							}
+		                                } else {
+		                                        $message = "escalation_delay is NOT expired.  Aborting Escalation.\n";
+		                                        Log::info($message);
+		                                        print $message;
+		                                }
+		                        } else {
+		                                $message = "It is currently outside of the escalation schedule.  Aborting Escalation.\n";
+		                                Log::info($message);
+		                                print $message;
+		                        }
+		                } else {
+		                        $message = "All escalation phone numbers have been exhausted.  Aborting Escalation.\n";
+		                        Log::info($message);
+		                        print $message;
+		                }
 			}
 		}
-	}
-
-
-	public function createEscalation($group, $incident)
-	{
-		$escalation = new Escalation;
-		$escalation->group = $group;
-		$escalation->incident = $incident;
-		return $escalation;
-	}
-/**/
-
-	public function processEscalations()
-	{
-        $groups = Group::all();
-        foreach($groups as $group)
-        {
-            $incidents = $group->getOpenUnassignedPriorityIncidents();
-            foreach($incidents as $incident)
-            {
-				$escalation = $incident->createEscalation();
-				$escalation->process();
-			}
-        }
 	}
 }
