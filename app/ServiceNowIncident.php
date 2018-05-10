@@ -44,40 +44,27 @@ class ServiceNowIncident extends ServiceNowModel
     public function getPriorityString()
     {
         $string = null;
-        if($this->priority == 1)
-        {
-            $string =  "critical";
-        }
-        if($this->priority == 2)
-        {
-            $string = "high";
-		}
-        if($this->priority == 3)
-        {
-            $string = "medium";
-        }
-        if($this->priority == 4)
-        {
-            $string = "low";
-        }
+	switch($this->priority)
+	{
+		case 1:
+			$string = "critical";
+			break;
+		case 2:
+			$string = "high";
+			break;
+		case 3:
+			$string = "medium";
+			break;
+		case 4:
+			$string = "low";
+			break;
+	}
         return $string;
     }
 
-/*
-	public function getCallLogs()
-	{
-		return CallLog::where('incident_sys_id',$this->sys_id)->get();
-	}
-/**/
 	public function generateVoiceMessage()
 	{
 		return "A new " . $this->getPriorityString() . " priority incident has been opened." . Tropo::stringToVoice($this->number) . "," . $this->short_description;
-	}
-
-	public function createEscalation()
-	{
-		$group = Group::where("sys_id",$this->assignment_group['value'])->first();
-		return new Escalation($group, $this);
 	}
 
 }

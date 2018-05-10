@@ -8,6 +8,7 @@ use App\CallLog;
 use App\Tropo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Escalation;
 
 class processIncidents extends Command
 {
@@ -62,7 +63,8 @@ class processIncidents extends Command
 				$message = "Creating an escalation for " . $incident->number . ".\n" ;
 	                        Log::info($message);
         	                print $message;
-				$escalation = $incident->createEscalation();
+				$escalation = new Escalation($group, $incident);
+				//$escalation = $incident->createEscalation();
 				if($escalation->getCurrentPhoneNumber())
 		                {
                 		        if($escalation->isCallTime())
