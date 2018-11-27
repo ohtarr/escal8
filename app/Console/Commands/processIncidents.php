@@ -4,9 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Group;
-use App\CallLog;
-use App\Tropo;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Escalation;
 

@@ -5,10 +5,6 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use App\ServiceNowIncident;
 use App\ServiceNowGroup;
-use App\Tropo;
-use App\CallLog;
-use App\Escalation;
-use App\Schedule;
 
 class Group extends Model
 {

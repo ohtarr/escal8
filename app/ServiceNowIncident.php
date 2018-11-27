@@ -5,11 +5,6 @@
 namespace App;
 
 use ohtarr\ServiceNowModel;
-use GuzzleHttp\Client as GuzzleHttpClient;
-use App\CallLog;
-use App\Tropo;
-use App\Escalation;
-use App\Group;
 
 class ServiceNowIncident extends ServiceNowModel
 {
@@ -64,7 +59,12 @@ class ServiceNowIncident extends ServiceNowModel
 
 	public function generateVoiceMessage()
 	{
-		return "A new " . $this->getPriorityString() . " priority incident has been opened." . Tropo::stringToVoice($this->number) . "," . $this->short_description;
+		return "A new " . $this->getPriorityString() . " priority incident has been opened." . $this->stringToVoice($this->number) . "," . $this->short_description;
+	}
+
+    public static function stringToVoice($name)
+	{
+		return implode(" ", str_split($name));	
 	}
 
 }

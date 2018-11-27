@@ -7,8 +7,8 @@ use App\Group;
 use App\ServiceNowIncident;
 use App\CallLog;
 use Carbon\Carbon;
-use App\Tropo;
-use App\Schedule;
+use App\Voice;
+
 use Illuminate\Support\Facades\Log;
 
 class Escalation extends Model
@@ -66,13 +66,18 @@ class Escalation extends Model
 		return $this->getCallLogs()->count();
 	}
 
+	public function generateVoiceMessage()
+	{
+		return "A new " . $this->incident->getPriorityString() . " priority incident has been opened." . Voice::stringToVoice($this->incident->number) . "," . $this->incident->short_description;
+	}
+
 	public function callGroup()
 	{
 		if($this->getCurrentPhoneNumber())
 		{
 			for($count = 0; $count <= 3; $count++)
 			{
-		        $status = Tropo::callvoice($this->getCurrentPhoneNumber(),$this->incident->generateVoiceMessage(), $this->group->tropo_key, $this->group->caller_id);
+				$status = Voice::Notify($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
 				if($status == 1)
 				{
 					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
