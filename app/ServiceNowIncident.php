@@ -60,7 +60,13 @@ class ServiceNowIncident extends ServiceNowModel
 	public function generateVoiceMessage()
 	{
 		return "A new " . $this->getPriorityString() . " priority incident has been opened." . $this->stringToVoice($this->number) . "," . $this->short_description;
-	}
+    }
+    
+    public function generateSmsMessage()
+    {
+        $msg = strtoupper($this->getPriorityString()) . "-" . $this->number . ":" . $this->short_description;
+        return substr($msg,0,160);
+    }
 
     public static function stringToVoice($name)
 	{

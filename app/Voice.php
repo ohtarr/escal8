@@ -34,39 +34,6 @@ class Voice
 		$array = json_decode($response->getBody()->getContents(), true);
 	}
 
-	public static function getCallId($to)
-	{
-		$params['auth'] = [
-			env("VOICE_TOKEN"),
-			env("VOICE_SECRET"),
-		];
-		$params['headers'] = [
-			'Content-Type'	=> 'application/json',
-		];
-		$params['query'] = [
-			'to'	=> $to,
-			'state'	=>	'active',
-		];
-		$client = new GuzzleHttpClient([
-			'base_uri' => env("VOICE_BASE_URL"),
-		]);
-		try
-		{
-			$response = $client->request("GET", "calls", $params);
-		} catch(\Exception $e) {
-			print $e->getMessage();
-		}
-		//get the body contents and decode json into an array.
-		$array = json_decode($response->getBody()->getContents(), true);
-		print_r($array);
-		if(!empty($array[0]['id']))
-		{
-			return $array[0]['id'];
-		} else {
-			return null;
-		}
-	}
-
 	public static function getCall($to)
 	{
 		$params['auth'] = [
@@ -155,7 +122,7 @@ class Voice
 		$array = json_decode($response->getBody()->getContents(), true);
 	}
 
-	public static function startNewCall($to)
+	public static function startNewCall($from,$to)
 	{
 		$call = self::getCall($to);
 		if($call)
@@ -164,7 +131,7 @@ class Voice
 		} else {
 			//for($y = 0; $y <=2; $y++)
 			//{
-				self::createCall(env("VOICE_CALLERID"),$to);
+				self::createCall($from,$to);
 
 				for($x = 0; $x <=60; $x++)
 				{
@@ -180,7 +147,7 @@ class Voice
 		}
 	}
 
-	public static function Notify($to, $message)
+	public static function NotifyVoice($from,$to, $message)
 	{
 		$msg = "";
 		for($repeats = 1; $repeats < 3; $repeats++)
@@ -190,7 +157,7 @@ class Voice
 		}
 		$msg .= $message;
 		$msg .= ",Goodbye!";
-		$call = self::startNewCall($to);
+		$call = self::startNewCall($from,$to);
 		if($call)
 		{
 			print_r($call);
@@ -214,6 +181,34 @@ class Voice
 		} else {
 			return false;
 		}
+	}
+
+	public static function NotifySms($from, $to, $message)
+	{
+		$body = [
+			"from"		=>	$from,
+			"to"		=>	$to,
+			"text"		=>	$message,
+		];
+		$params['auth'] = [
+			env("VOICE_TOKEN"),
+			env("VOICE_SECRET"),
+		];
+		$params['body'] = json_encode($body);
+		$params['headers'] = [
+			'Content-Type'	=> 'application/json',
+		];
+		$client = new GuzzleHttpClient([
+			'base_uri' => env("VOICE_BASE_URL"),
+		]);
+		try
+		{
+			$response = $client->request("POST", "messages", $params);
+		} catch(\Exception $e) {
+			print $e->getMessage();
+		}
+		//get the body contents and decode json into an array.
+		$array = json_decode($response->getBody()->getContents(), true);
 	}
 
 	public static function stringToVoice($name)

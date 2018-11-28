@@ -77,10 +77,28 @@ class Escalation extends Model
 		{
 			for($count = 0; $count <= 3; $count++)
 			{
-				$status = Voice::Notify($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
+				$status = Voice::NotifyVoice($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
 				if($status == 1)
 				{
 					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
+					$this->createCallLog(1);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public function smsGroup()
+	{
+		if($this->getCurrentPhoneNumber())
+		{
+			for($count = 0; $count <= 3; $count++)
+			{
+				$status = Voice::NotifyVoice($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
+				if($status == 1)
+				{
+					$this->incident->addComment("Texted " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
 					$this->createCallLog(1);
 					return true;
 				}
