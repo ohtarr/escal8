@@ -8,7 +8,6 @@ use App\ServiceNowIncident;
 use App\CallLog;
 use Carbon\Carbon;
 use App\Voice;
-
 use Illuminate\Support\Facades\Log;
 
 class Escalation extends Model
@@ -58,6 +57,8 @@ class Escalation extends Model
 		$calllog->callnum = $this->getCallNumber();
 		$calllog->msg = $this->incident->generateVoiceMessage();
 		$calllog->status = $status;
+		$calllog->voice = $this->group->voice;
+		$calllog->sms = $this->group->sms;
 		$calllog->save();
 	}
 
@@ -77,8 +78,8 @@ class Escalation extends Model
 		{
 			for($count = 0; $count <= 3; $count++)
 			{
-				$status = Voice::NotifyVoice($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
-				if($status == 1)
+				$status = Voice::NotifyVoice($this->group->caller_id, $this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
+				if($status)
 				{
 					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
 					$this->createCallLog(1);
@@ -127,35 +128,59 @@ class Escalation extends Model
 		}
 		return false;
 	}
-/*
-	public function process()
+
+	public function isCallable()
 	{
-		if($this->getCurrentPhoneNumber())
+		$this->incident = $this->incident->getFresh();
+		if($this->isCallTime() && $this->isCallDelayExpired() && $this->incident->assigned_to == "" && $this->incident->priority < $this->group->min_priority && $this->getCurrentPhoneNumber())
 		{
-			if($this->isCallTime())
-			{
-				if($this->isCallDelayExpired())
-				{
-					$message = "Calling " . $this->getCurrentPhoneNumber() . " for group " . $this->group->getServiceNowGroup()->name . ".\n" ;
-	        	                Log::info($message);
-                		        print $message;
-					$this->callGroup();
-				} else {
-					$message = "escalation_delay is NOT expired.  Aborting Escalation.\n";
-					Log::info($message);
-                                	print $message;
-				}
-			} else {
-				$message = "It is currently outside of the escalation schedule.  Aborting Escalation.\n";
-        	                Log::info($message);
-                	        print $message;
-			}
-		} else {
-			$message = "All escalation phone numbers have been exhausted.  Aborting Escalation.\n";
-                        Log::info($message);
-                        print $message;
+			return true;
 		}
 	}
-/**/
+
+	public function process()
+	{
+		$exit = 0;
+		if(!$this->getCurrentPhoneNumber())
+		{
+			$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": All escalation phone numbers have been exhausted.  Aborting Escalation.\n";
+			Log::info($message);
+			print $message;
+			$exit=1;
+		}
+		if(!$this->isCallTime())
+		{
+			$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": It is currently outside of the escalation schedule.  Aborting Escalation.\n";
+			Log::info($message);
+			print $message;
+			$exit=1;
+		}
+		if(!$this->isCallDelayExpired())
+		{
+			$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": escalation_delay is NOT expired.  Aborting Escalation.\n";
+			Log::info($message);
+			print $message;
+			$exit=1;
+		}
+		if($exit == 1)
+		{
+			return null;
+		}
+		$callstatus = $this->callGroup();
+		if($callstatus)
+		{
+			$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": Call to group was SUCCESSFUL!\n";
+			Log::info($message);
+			print $message;
+			return true;
+		} else {
+			$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": Call to group FAILED!\n";
+			Log::info($message);
+			print $message;
+			return false;
+		}
+
+	}
+
 }
 

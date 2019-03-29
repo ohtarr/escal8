@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use App\ServiceNowIncident;
 use App\ServiceNowGroup;
+use Illuminate\Support\Facades\Log;
 
 class Group extends Model
 {
@@ -33,5 +34,20 @@ class Group extends Model
 			return $this->ServiceNowGroup;
 		}
 	}
+
+	public function processIncidents()
+	{
+		$incidents = $this->getOpenUnassignedPriorityIncidents();
+		foreach($incidents as $incident)
+		{
+			$message = $this->getServiceNowGroup()->name . " " . $incident->number . ": Creating escalation.\n";
+			Log::info($message);
+			print $message;
+			$escalation = new Escalation($this, $incident);
+			$escalation->process();
+		}
+	}
+
+
 
 }

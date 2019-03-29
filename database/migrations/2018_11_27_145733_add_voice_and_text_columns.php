@@ -14,8 +14,8 @@ class AddVoiceAndTextColumns extends Migration
     public function up()
     {
 		Schema::table('groups', function (Blueprint $table) {
-            $table->boolean('voice');
-            $table->boolean('sms');
+            $table->boolean('voice')->default(0);
+            $table->boolean('sms')->default(0);
 		});
     }
 

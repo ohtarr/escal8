@@ -36,6 +36,16 @@ class ServiceNowIncident extends ServiceNowModel
         }
     }
 
+    public function isUnassigned()
+    {
+        if($this->assigned_to == "")
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public function getPriorityString()
     {
         $string = null;
@@ -71,6 +81,11 @@ class ServiceNowIncident extends ServiceNowModel
     public static function stringToVoice($name)
 	{
 		return implode(" ", str_split($name));	
-	}
+    }
+    
+    public function getFresh()
+    {
+        return self::where("sys_id",$this->sys_id)->first();
+    }
 
 }
