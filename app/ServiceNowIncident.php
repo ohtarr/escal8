@@ -36,6 +36,16 @@ class ServiceNowIncident extends ServiceNowModel
         }
     }
 
+    public function isUnassigned()
+    {
+        if($this->assigned_to == "")
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public function getPriorityString()
     {
         $string = null;
@@ -60,11 +70,22 @@ class ServiceNowIncident extends ServiceNowModel
 	public function generateVoiceMessage()
 	{
 		return "A new " . $this->getPriorityString() . " priority incident has been opened." . $this->stringToVoice($this->number) . "," . $this->short_description;
-	}
+    }
+    
+    public function generateSmsMessage()
+    {
+        $msg = strtoupper($this->getPriorityString()) . "-" . $this->number . ":" . $this->short_description;
+        return substr($msg,0,160);
+    }
 
     public static function stringToVoice($name)
 	{
 		return implode(" ", str_split($name));	
-	}
+    }
+    
+    public function getFresh()
+    {
+        return self::where("sys_id",$this->sys_id)->first();
+    }
 
 }
