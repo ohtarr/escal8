@@ -47,7 +47,4 @@ class Group extends Model
 			$escalation->process();
 		}
 	}
-
-
-
 }

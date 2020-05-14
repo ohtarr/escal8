@@ -67,11 +67,6 @@ class ServiceNowIncident extends ServiceNowModel
         return $string;
     }
 
-	public function generateVoiceMessage()
-	{
-		return "A new " . $this->getPriorityString() . " priority incident has been opened." . $this->stringToVoice($this->number) . "," . $this->short_description;
-    }
-    
     public function generateSmsMessage()
     {
         $msg = strtoupper($this->getPriorityString()) . "-" . $this->number . ":" . $this->short_description;
