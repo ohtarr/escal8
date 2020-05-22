@@ -1,7 +1,7 @@
 {
-    "name": "laravel/laravel",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "name": "ohtarr/escal8",
+    "description": "Escal8",
+    "keywords": ["Escalation", "Voice", "laravel"],
     "license": "MIT",
     "type": "project",
     "require": {

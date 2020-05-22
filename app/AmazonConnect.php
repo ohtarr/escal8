@@ -14,7 +14,7 @@ class AmazonConnect
 	{
 		$client = new ConnectClient([
 			'version'     => 'latest',
-			'region'      => 'us-east-1',
+			'region'      => env('AMAZON_REGION'),
 			'credentials' => [
 				'key'    => env('AMAZON_KEY'),
 				'secret' => env('AMAZON_SECRET'),
@@ -29,13 +29,23 @@ class AmazonConnect
 			'Attributes'				=> ['msg'	=>	$msg],
 		];
 
-		$message = "AMAZONCONNECT: Notifying " . $to . " with message " . $msg . ".\n";
+		$message = 'AMAZONCONNECT: Notifying ' . $to . ' with message "' . $msg . '".' . "\n";
+		print $message;
 		Log::info($message);
-
-		$result = $client->startOutboundVoiceContact($params);
+		$result = null;
+		try
+		{
+			$result = $client->startOutboundVoiceContact($params);
+		} catch(\Exception $e) {
+			//print $e->getAwsErrorMessage();
+			$message = "AMAZONCONNECT: Call Failure: " . $e->getAwsErrorMessage() ."\n";
+			print $message;
+			Log::info($message);
+		}
 		if($result)
 		{
 			$message = "AMAZONCONNECT: ContactId " . $result->get('ContactId') . " created successfully.\n";
+			print $message;
 			Log::info($message);
 		}
 		return $result;

@@ -51,6 +51,9 @@ class processIncidents extends Command
 	}
 	public function processEscalations()
 	{
+		$message = "Processing Groups...\n";
+		Log::info($message);
+		print $message;
 		$groups = Group::all();
 		foreach($groups as $group)
         {
