@@ -8,6 +8,7 @@ use App\ServiceNowIncident;
 use App\CallLog;
 use Carbon\Carbon;
 use App\Voice;
+use App\AmazonConnect;
 use Illuminate\Support\Facades\Log;
 
 class Escalation extends Model
@@ -28,16 +29,21 @@ class Escalation extends Model
         return $this->belongsTo('Schedule');
     }
 
-	public function getCallLogs()
+	public function getSuccessfullCallLogs()
+	{
+		return CallLog::where('incident_sys_id',$this->incident->sys_id)->where('group_id',$this->group->id)->where("status", 1)->get();
+	}
+
+ 	public function getAllCallLogs()
 	{
 		return CallLog::where('incident_sys_id',$this->incident->sys_id)->where('group_id',$this->group->id)->get();
 	}
 
-	public function getLastCallLog()
+	public function getLastSuccessfulCallLog()
 	{
-		return $this->getCallLogs()->sortBy('created_at')->last();
+		return $this->getSuccessfullCallLogs()->sortBy('created_at')->last();
 	}
-
+	
 	public function getCurrentPhoneNumber()
 	{
 		if(isset($this->group->phones[$this->getCallNumber()]))
@@ -47,7 +53,7 @@ class Escalation extends Model
 		return null;
 	}
 
-	public function createCallLog($status)
+	public function createCallLog($status, $contactid)
 	{
 		$calllog = new CallLog;
 		$calllog->group_id = $this->group->id;
@@ -55,35 +61,39 @@ class Escalation extends Model
 		$calllog->to = $this->getCurrentPhoneNumber();
 		$calllog->from = $this->group->caller_id;
 		$calllog->callnum = $this->getCallNumber();
-		$calllog->msg = $this->incident->generateVoiceMessage();
+		$calllog->msg = $this->generateVoiceMessage();
 		$calllog->status = $status;
 		$calllog->voice = $this->group->voice;
 		$calllog->sms = $this->group->sms;
+		$calllog->contactid = $contactid;
 		$calllog->save();
 	}
 
 	public function getCallNumber()
 	{
-		return $this->getCallLogs()->count();
+		return $this->getSuccessfullCallLogs()->count();
 	}
 
 	public function generateVoiceMessage()
 	{
-		return "A new " . $this->incident->getPriorityString() . " priority incident has been opened." . Voice::stringToVoice($this->incident->number) . "," . $this->incident->short_description;
+		return "A " . $this->incident->getPriorityString() . " priority ticket has been assigned to your group," . $this->stringToVoice($this->incident->number) . "," . $this->incident->short_description;
 	}
 
 	public function callGroup()
 	{
 		if($this->getCurrentPhoneNumber())
 		{
-			for($count = 0; $count <= 3; $count++)
+			$msg = $this->generateVoiceMessage();
+			for($count = 0; $count <= 2; $count++)
 			{
-				$status = Voice::NotifyVoice($this->group->caller_id, $this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
+				$status = AmazonConnect::Notify($this->group->caller_id, $this->getCurrentPhoneNumber(), $msg);
 				if($status)
 				{
-					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
-					$this->createCallLog(1);
+					$this->incident->addComment("Called " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $msg);
+					$this->createCallLog(1,$status->get('ContactId'));
 					return true;
+				} else {
+					$this->createCallLog(0, null);
 				}
 			}
 		}
@@ -96,10 +106,10 @@ class Escalation extends Model
 		{
 			for($count = 0; $count <= 3; $count++)
 			{
-				$status = Voice::NotifyVoice($this->getCurrentPhoneNumber(), $this->incident->generateVoiceMessage());
+				$status = Voice::NotifyVoice($this->getCurrentPhoneNumber(), $this->generateVoiceMessage());
 				if($status == 1)
 				{
-					$this->incident->addComment("Texted " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->incident->generateVoiceMessage());
+					$this->incident->addComment("Texted " .$this->group->getServiceNowGroup()->name . " group at " . $this->getCurrentPhoneNumber() . " and played the following message : \n" . $this->generateVoiceMessage());
 					$this->createCallLog(1);
 					return true;
 				}
@@ -121,7 +131,7 @@ class Escalation extends Model
 
 	public function isCallDelayExpired()
 	{
-		$lastlog = $this->getLastCallLog();
+		$lastlog = $this->getLastSuccessfulCallLog();
 		if(!$lastlog || $lastlog->created_at < Carbon::now()->subMinutes($this->group->escalation_delay))
 		{
 			return true;
@@ -129,17 +139,20 @@ class Escalation extends Model
 		return false;
 	}
 
-	public function isCallable()
+/* 	public function isCallable()
 	{
 		$this->incident = $this->incident->getFresh();
 		if($this->isCallTime() && $this->isCallDelayExpired() && $this->incident->assigned_to == "" && $this->incident->priority < $this->group->min_priority && $this->getCurrentPhoneNumber())
 		{
 			return true;
 		}
-	}
+	} */
 
 	public function process()
 	{
+		$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": Processing Escalation...\n";
+		Log::info($message);
+		print $message;
 		$exit = 0;
 		if(!$this->getCurrentPhoneNumber())
 		{
@@ -166,6 +179,9 @@ class Escalation extends Model
 		{
 			return null;
 		}
+		$message = $this->group->getServiceNowGroup()->name . " " . $this->incident->number . ": Calling Group...\n";
+		Log::info($message);
+		print $message;
 		$callstatus = $this->callGroup();
 		if($callstatus)
 		{
@@ -180,6 +196,11 @@ class Escalation extends Model
 			return false;
 		}
 
+	}
+
+	public static function stringToVoice($name)
+	{
+		return implode(" ", str_split($name));	
 	}
 
 }

@@ -14,6 +14,8 @@ class Group extends Model
 		'phones' => 'array',
 	];
 
+	public $ServiceNowGroup;
+
     public function schedule()
     {
         return $this->belongsTo('App\Schedule');
@@ -37,6 +39,9 @@ class Group extends Model
 
 	public function processIncidents()
 	{
+		$message = $this->getServiceNowGroup()->name . ": Processing Escalations for group...\n";
+		Log::info($message);
+		print $message;
 		$incidents = $this->getOpenUnassignedPriorityIncidents();
 		foreach($incidents as $incident)
 		{
@@ -47,7 +52,4 @@ class Group extends Model
 			$escalation->process();
 		}
 	}
-
-
-
 }
