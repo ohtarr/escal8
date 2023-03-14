@@ -57,7 +57,12 @@ class processIncidents extends Command
 		$groups = Group::all();
 		foreach($groups as $group)
         {
-			$group->processIncidents();
+			try{
+				$group->processIncidents();
+			} catch(\Exception $e) {
+				print "An Exception occurred, skipping!\n";
+				continue;
+			}
 		}
 	}
 }
