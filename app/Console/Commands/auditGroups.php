@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Group;
+use App\Models\Group;
 
 class auditGroups extends Command
 {
