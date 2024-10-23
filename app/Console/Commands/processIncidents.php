@@ -3,10 +3,10 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Group;
+use App\Models\Group;
 use Illuminate\Support\Facades\Log;
-use App\Escalation;
-use App\ServiceNowIncident;
+use App\Models\Escalation;
+use App\Models\ServiceNowIncident;
 
 class processIncidents extends Command
 {
